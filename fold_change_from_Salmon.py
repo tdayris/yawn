@@ -32,6 +32,7 @@ For more information, please refer to <http://unlicense.org/>
 
 import begin
 import logging
+import os.path as op
 import pandas as pd
 import traceback
 
@@ -79,6 +80,9 @@ def main(condition1: "Path to files from condition 1 (comma separated)",
     """
     This script reads salmon files and returns a table of foldchanges
     """
+    if op.path.exists(output):
+        raise FileExistsError("%s already exists" % outut)
+
     cond1 = read_salmons(prefix, suffix, *condition1.split(","))
     cond2 = read_salmons(prefix, suffix, *condition2.split(","))
 
