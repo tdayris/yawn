@@ -36,6 +36,7 @@ import pandas as pd
 import traceback
 
 
+@begin.convert(prefix=str, suffix=str)
 def read_salmons(prefix, suffix, *files) -> pd.DataFrame:
     """
     Returns a unique DataFrame from multiple Salmon files. It contains:
@@ -46,11 +47,12 @@ def read_salmons(prefix, suffix, *files) -> pd.DataFrame:
     for salmon in files:
         logging.debug("Parsing: %s" % salmon)
         tmp = pd.read_csv(salmon, sep="\t", header=0, index_col=0)[["TPM"]]
+
         sample_id = str(salmon)
         sample_id = sample_id if suffix == "" else sample_id[:-len(suffix)]
         sample_id = sample_id if prefix == "" else sample_id[len(prefix):]
         tmp.columns = [sample_id]
-        logging.debug(tmp.head())
+
         try:
             data = pd.merge(data, tmp, left_index=True, right_index=True)
         except ValueError:
@@ -63,6 +65,8 @@ def read_salmons(prefix, suffix, *files) -> pd.DataFrame:
 @begin.start
 @begin.logging
 @begin.tracebacks
+@begin.convert(condition1_name=str, condition2_name=str,
+               output=str, prefix=str, suffix=str)
 def main(condition1: "Path to files from condition 1 (comma separated)",
          condition2: "Path to files from condition 2 (comma separated)",
          condition1_name: "The condition 1 name"="Condition1",
@@ -75,11 +79,12 @@ def main(condition1: "Path to files from condition 1 (comma separated)",
     """
     This script reads salmon files and returns a table of foldchanges
     """
-    print(condition1.split(","))
     cond1 = read_salmons(prefix, suffix, *condition1.split(","))
     cond2 = read_salmons(prefix, suffix, *condition2.split(","))
+
     suf1 = "_%s" % condition1_name
     suf2 = "_%s" % condition2_name
+
     logging.debug("Mergind data")
     fc = pd.merge(
         cond1, cond2,
@@ -88,9 +93,11 @@ def main(condition1: "Path to files from condition 1 (comma separated)",
         how="outer"
     )
     fc.fillna(0)
+
     logging.debug("Conputing Fold Change")
     fc_name = "FoldChange %s/%s" % (condition1_name, condition2_name)
     fc[fc_name] = fc["MeanTPM%s" % suf1] / fc["MeanTPM%s" % suf2]
     logging.debug(fc.head())
+
     logging.debug("Saving to %s" % output)
     fc.to_csv(output, sep="\t")
