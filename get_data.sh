@@ -3,7 +3,9 @@
 # This script takes accession numbers as input, then searches for data, and
 # copy them on ${PWD}.
 
-data_paths=(/pandas/Data_Patient/{MAPPYACTS,MOSCATOPED} /data_bioinfo/MP/{MOSCATO01,MOSCATO02,MATCHR})
+MAPPYACTS="/pandas/Data_Patient/MAPPYACTS"
+MOSCATO=("/pandas/Data_Patient/MOSCATOPED" /data_bioinfo/MP/{MOSCATO01,MOSCATO02})
+MATCHR="/data_bioinfo/MP/MATCHR"
 data_pid=()  # The identifier of the data
 fastq=false  # Boolean, weather to retrieve fastq only or the whole directory
 
@@ -33,26 +35,43 @@ errorhandling() {
 
 for option in "$@"; do
   case "${option}" in
-    MAP[0-9]*[_[a-zA-Z]*]?|MR?[0-9]*[_[a-zA-Z]*]?)
-      echo -e "Will be looking for ${option}"
-      data_pid+=("${option}")
+    MAP[0-9]*[_[a-zA-Z]*]?)
+      echo "Looking for this MAPPYACTS data"
+      find "${MAPPYACTS}" -maxdepth 1 -type d -name "${option}" -exec bash -c echo {} "${PWD}" \;
       ;;
-    --fastq|fastq|--fq)
-      echo "Will only retrieve fastq data"
-      fastq=true
+    MR[0-9]*[_[a-zA-Z]*]?)
+      echo "Looking for this MATCHR data"
+      find "${MATCHR}" -maxdepth 1 -type d -name "${option}" -exec bash -c echo {} "${PWD}" \;
       ;;
-    -*|--|*)
-      echo "Unknown option"
-      errorhandling ${LINENO} 1 "Unknown option ${option}"
+    M[0-9]*[_[a-zA-Z]*]?)
+      echo "Looking for this MOSCATO data"
+      find "${MOSCATO[@]}" -maxdepth 1 -type d -name "${option}" -exec bash -c echo {} "${PWD}" \;
+      ;;
   esac
 done
 
-for data in "${data_pid[@]}"; do
-  if ${fastq} == true; then
-    while read path; do
-      find ${path} -type f -iname "*${data}*fastq*" -exec bash -c echo {} ${PWD} \;
-    done < $(find "${data_paths[@]}" -maxdepth 1 -type d -name "${data}")
-  else
-    find "${data_paths[@]}" -maxdepth 1 -type d -name "${data}" -exec bash -c echo {} ${PWD} \;
-  fi
-done
+# for option in "$@"; do
+#   case "${option}" in
+#     MAP[0-9]*[_[a-zA-Z]*]?|MR?[0-9]*[_[a-zA-Z]*]?)
+#       echo -e "Will be looking for ${option}"
+#       data_pid+=("${option}")
+#       ;;
+#     --fastq|fastq|--fq)
+#       echo "Will only retrieve fastq data"
+#       fastq=true
+#       ;;
+#     -*|--|*)
+#       echo "Unknown option"
+#       errorhandling ${LINENO} 1 "Unknown option ${option}"
+#   esac
+# done
+#
+# for data in "${data_pid[@]}"; do
+#   if ${fastq} == true; then
+#     while read path; do
+#       find ${path} -type f -iname "*${data}*fastq*" -exec bash -c echo {} ${PWD} \;
+#     done < $(find "${data_paths[@]}" -maxdepth 1 -type d -name "${data}")
+#   else
+#     find "${data_paths[@]}" -maxdepth 1 -type d -name "${data}" -exec bash -c echo {} ${PWD} \;
+#   fi
+# done
