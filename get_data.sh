@@ -54,8 +54,18 @@ done
 for data in "${data_pid[@]}"; do
   echo "Retrieving ${data} , and saving it to ${PWD}"
   if [ ${fastq} == true ]; then
-    find ${data} -type f -iname "*fastq*" -exec cp -v {} ${PWD} \; || errorhandling ${LINENO} 2 "Could not copy fastq data: ${data}"
+    while read file; do
+      if ! [[ -f "${PWD}/$(basename ${file})" ]]; then
+        cp -v "${file}" "${PWD}" || errorhandling ${LINENO} 2 "Could not copy fastq data: ${data}"
+      else
+        echo "${file} seems to already be copied. Skipping."
+      fi
+    done < $(find ${data} -type f -iname "*fastq*")
   else
-    cp -rv "${data}" ${PWD} || errorhandling ${LINENO} 2 "Could not copy data: ${data}"
+    if ! [[ -d "${PWD}/$(basename ${data})" ]]; then
+      cp -rv "${data}" ${PWD} || errorhandling ${LINENO} 2 "Could not copy data: ${data}"
+    else
+      echo "${data} seems to already be copied. Skipping."
+    fi
   fi
 done
