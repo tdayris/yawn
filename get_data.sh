@@ -34,44 +34,28 @@ errorhandling() {
 }
 
 for option in "$@"; do
-  case "${option}" in
-    MAP[0-9]*[_[a-zA-Z]*]?)
-      echo "Looking for this MAPPYACTS data"
-      find "${MAPPYACTS}" -maxdepth 1 -type d -name "${option}" -exec bash -c echo {} "${PWD}" \;
-      ;;
-    MR[0-9]*[_[a-zA-Z]*]?)
-      echo "Looking for this MATCHR data"
-      find "${MATCHR}" -maxdepth 1 -type d -name "${option}" -exec bash -c echo {} "${PWD}" \;
-      ;;
-    M[0-9]*[_[a-zA-Z]*]?)
-      echo "Looking for this MOSCATO data"
-      find "${MOSCATO[@]}" -maxdepth 1 -type d -name "${option}" -exec bash -c echo {} "${PWD}" \;
-      ;;
-  esac
+  if [[ "${option}" =~ MAP[0-9]*[_[a-zA-Z]*]? ]]; then
+    echo "Looking for this MAPPYACTS data ${option}"
+    data_pid+=($(find "${MAPPYACTS}" -maxdepth 1 -type d -name "${option}" || errorhandling ${LINENO} 2 "Could not find ${option}"))
+  elif [[ "${option}" =~ MR[0-9]*[_[a-zA-Z]*]? ]]; then
+    echo "Looking for this MATCHR data ${option}"
+    data_pid+=($(find "${MATCHR}" -maxdepth 1 -type d -name "${option}" || errorhandling ${LINENO} 2 "Could not find ${option}"))
+  elif [[ "${option}" =~ M[0-9]*[_[a-zA-Z]*]? ]]; then
+    echo "Looking for this MOSCATO data ${option}"
+    data_pid+=($(find "${MOSCATO[@]}" -maxdepth 1 -type d -name "${option}" || errorhandling ${LINENO} 2 "Could not find ${option}"))
+  elif [[ "${option}" =~ (-|--)?(F|f)(q|astq|ASTQ) ]]; then
+    echo "Retrieving fastq files only"
+    fastq=true
+  else
+    errorhandling ${LINENO} 1 "Unknown option ${option}"
+  fi
 done
 
-# for option in "$@"; do
-#   case "${option}" in
-#     MAP[0-9]*[_[a-zA-Z]*]?|MR?[0-9]*[_[a-zA-Z]*]?)
-#       echo -e "Will be looking for ${option}"
-#       data_pid+=("${option}")
-#       ;;
-#     --fastq|fastq|--fq)
-#       echo "Will only retrieve fastq data"
-#       fastq=true
-#       ;;
-#     -*|--|*)
-#       echo "Unknown option"
-#       errorhandling ${LINENO} 1 "Unknown option ${option}"
-#   esac
-# done
-#
-# for data in "${data_pid[@]}"; do
-#   if ${fastq} == true; then
-#     while read path; do
-#       find ${path} -type f -iname "*${data}*fastq*" -exec bash -c echo {} ${PWD} \;
-#     done < $(find "${data_paths[@]}" -maxdepth 1 -type d -name "${data}")
-#   else
-#     find "${data_paths[@]}" -maxdepth 1 -type d -name "${data}" -exec bash -c echo {} ${PWD} \;
-#   fi
-# done
+for data in "${data_pid[@]}"; do
+  echo "Retrieving ${data} , and saving it to ${PWD}"
+  if [ ${fastq} == true ]; then
+    find ${data} -type f -iname "*${data}*fastq*" -exec bash -c echo {} ${PWD} \;
+  else
+    cp -r "${data}" ${PWD}
+  fi
+done
