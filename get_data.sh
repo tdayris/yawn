@@ -2,6 +2,7 @@
 
 # This script takes accession numbers as input, then searches for data, and
 # copy them on ${PWD}.
+# CMD example: bash /data/dayris/Scripts/yawn/get_data.sh M737 MAP213 -fq
 
 MAPPYACTS="/pandas/Data_Patient/MAPPYACTS"
 MOSCATO=("/pandas/Data_Patient/MOSCATOPED" /data_bioinfo/MP/{MOSCATO01,MOSCATO02})
