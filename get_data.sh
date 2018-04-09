@@ -33,7 +33,7 @@ errorhandling() {
 
 for option in "$@"; do
   case "${option}" in
-    MAP[0-9]*[_[a-zA-Z]*]?|MR[0-9]*[_[a-zA-Z]*]?|M[0-9]*[_[a-zA-Z]*]?)
+    MAP[0-9]*[_[a-zA-Z]*]?|MR?[0-9]*[_[a-zA-Z]*]?)
       echo -e "Will be looking for ${option}"
       data_pid+=("${option}")
       ;;
@@ -43,7 +43,7 @@ for option in "$@"; do
       ;;
     -*|--|*)
       echo "Unknown option"
-      errorhandling ${LINENO} 1 "Unknown option"
+      errorhandling ${LINENO} 1 "Unknown option ${option}"
   esac
 done
 
