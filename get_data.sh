@@ -35,13 +35,13 @@ errorhandling() {
 
 for option in "$@"; do
   if [[ "${option}" =~ MAP[0-9]*[_[a-zA-Z]*]? ]]; then
-    echo "Looking for this MAPPYACTS data ${option}"
+    echo "Looking for this MAPPYACTS data: ${option}"
     data_pid+=($(find "${MAPPYACTS}" -maxdepth 1 -type d -name "${option}" || errorhandling ${LINENO} 2 "Could not find ${option}"))
   elif [[ "${option}" =~ MR[0-9]*[_[a-zA-Z]*]? ]]; then
-    echo "Looking for this MATCHR data ${option}"
+    echo "Looking for this MATCHR data: ${option}"
     data_pid+=($(find "${MATCHR}" -maxdepth 1 -type d -name "${option}" || errorhandling ${LINENO} 2 "Could not find ${option}"))
   elif [[ "${option}" =~ M[0-9]*[_[a-zA-Z]*]? ]]; then
-    echo "Looking for this MOSCATO data ${option}"
+    echo "Looking for this MOSCATO data: ${option}"
     data_pid+=($(find "${MOSCATO[@]}" -maxdepth 1 -type d -name "${option}" || errorhandling ${LINENO} 2 "Could not find ${option}"))
   elif [[ "${option}" =~ (-|--)?(F|f)(q|astq|ASTQ) ]]; then
     echo "Retrieving fastq files only"
@@ -54,8 +54,8 @@ done
 for data in "${data_pid[@]}"; do
   echo "Retrieving ${data} , and saving it to ${PWD}"
   if [ ${fastq} == true ]; then
-    find ${data} -type f -iname "*fastq*" -exec bash -c echo {} ${PWD} \;
+    find ${data} -type f -iname "*fastq*" -exec cp -v {} ${PWD} \; || errorhandling ${LINENO} 2 "Could not copy fastq data: ${data}"
   else
-    cp -r "${data}" ${PWD}
+    cp -rv "${data}" ${PWD} || errorhandling ${LINENO} 2 "Could not copy data: ${data}"
   fi
 done
