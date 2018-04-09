@@ -79,7 +79,7 @@ for data in "${data_pid[@]}"; do
       else
         echo "${file} seems to already be copied. Skipping."
       fi
-    done < $(find ${data} -type f -iname "*fastq*")
+    done < <(find ${data} -type f -iname "*fastq*")
   else
     # Copying whole directories if requested by user
     if ! [[ -d "${PWD}/$(basename ${data})" ]]; then
@@ -138,6 +138,6 @@ fi
 while read file; do
   echo "Gunzipping ${file}"
   echo gunzip "${file}" | qsub -N "$(basename "${file}")" -V -d "${PWD}" -j oe -M thibault.dayris@gustaveroussy.fr -m be
-done < $(find "${PWD}" -type f -name "*.fastq.gz")
+done < <(find "${PWD}" -type f -name "*.fastq.gz")
 
 echo "Come back after all unzipping processed are over to run DeVa."

@@ -6,16 +6,15 @@ command_file="$(date +%s)_Run_Deva_Clinics.sh"
 cd "${work_dir}" || exit 1
 echo "Now working on ${work_dir}"
 
-
-for i in $(find "${PWD}" -type f -name "*_fastq.gz"); do
+while read i; do
   echo "Renaming: ${i}"
   mv "${i}" "${i%%_fastq.gz}".fastq.gz
-done
+done < <(find "${PWD}" -type f -name "*_fastq.gz")
 
-for i in $(find "${PWD}" -type f -name "*.fastq.gz"); do
+while read i; do
   echo "Gunzipping: ${i}"
-  echo gunzip "${i}" | qsub -N $(basename "${i}") -V -d "${PWD}" -j oe -M thibault.dayris@gustaveroussy.fr -m be
-done
+  echo gunzip "${i}" | qsub -N "$(basename "${i}")" -V -d "${PWD}" -j oe -M thibault.dayris@gustaveroussy.fr -m be
+done < <(find "${PWD}" -type f -name "*.fastq.gz")
 
 
 cd -
