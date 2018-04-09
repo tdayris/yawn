@@ -33,7 +33,7 @@ errorhandling() {
 
 for option in "$@"; do
   case "${option}" in
-    (MAP[0-9]*|MR[0-9]*|M[0-9]*)[_[:alnum]*])
+    MAP[0-9]*[_[:alnum]*]|MR[0-9]*[_[:alnum]*]|M[0-9]*[_[:alnum]*])
       echo -e "Will be looking for ${option}"
       data_pid+=("${option}")
       ;;
