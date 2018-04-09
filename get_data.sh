@@ -54,7 +54,7 @@ done
 for data in "${data_pid[@]}"; do
   echo "Retrieving ${data} , and saving it to ${PWD}"
   if [ ${fastq} == true ]; then
-    find ${data} -type f -iname "*${data}*fastq*" -exec bash -c echo {} ${PWD} \;
+    find ${data} -type f -iname "*fastq*" -exec bash -c echo {} ${PWD} \;
   else
     cp -r "${data}" ${PWD}
   fi
