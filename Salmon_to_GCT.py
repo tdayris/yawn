@@ -113,7 +113,6 @@ def main(*salmon_files: "Space separated list of salmon files List[str]",
     del salmon_frame["Gene_ID"]
     del salmon_frame["index"]
 
-
     # Reorder the columns as expected
     salmon_cols = salmon_frame.columns.tolist()
     salmon_frame = salmon_frame[
@@ -121,8 +120,10 @@ def main(*salmon_files: "Space separated list of salmon files List[str]",
     ]
 
     # Save file with comment lines
+    nline, ncol = salmon_frame.shape
+    ncol -= 1
     logging.debug("Saving file: %s" % output_file)
     with open(output_file, "w") as outfile:
-        outfile.write("#1.2\n%s\n" % "\t".join(map(str, salmon_frame.shape)))
+        outfile.write("#1.2\n%i\t%i\n" % (nline, ncol))
         salmon_frame.index.str.upper()
         salmon_frame.to_csv(outfile, sep="\t")
