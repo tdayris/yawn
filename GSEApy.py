@@ -62,7 +62,7 @@ if __name__ == '__main__':
         help="Gene set name",
         type=str,
         choices=gp.get_library_name(),
-        default='GO_Biological_Process_2017'
+        default='KEGG_2017'
     )
 
     parser.add_argument(
