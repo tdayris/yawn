@@ -4,7 +4,7 @@
 """
 Plot stacked bar of DPSI ASE usage across multiple sample
 
-Unlincence terms of use:
+Unlincense terms of use:
 This is free and unencumbered software released into the public domain.
 
 Anyone is free to copy, modify, publish, use, compile, sell, or

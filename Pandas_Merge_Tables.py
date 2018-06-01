@@ -4,7 +4,7 @@
 """
 Join multiple Sleuth files, rename columns and stack them on demand
 
-Unlincence terms of use:
+Unlincense terms of use:
 This is free and unencumbered software released into the public domain.
 
 Anyone is free to copy, modify, publish, use, compile, sell, or
@@ -40,7 +40,7 @@ from pathlib import Path
 
 
 @begin.convert(salmon=begin.utils.tobool, sleuth=begin.utils.tobool)
-def swith(salmon, sleuth) -> pd.DataFrame:
+def switch(salmon, sleuth) -> pd.DataFrame:
     """
     Calls the right function
     """
@@ -156,17 +156,18 @@ def main(*paths: "Multiple paths to TSV files",
     """
     merged_frame = None
     destin = Path(output)
-    parser = swith(salmon, sleuth)
+    parser = switch(salmon, sleuth)
     if destin.exists():
         raise FileExistsError("Output file already exists: %s" % str(destin))
 
+    # Read files
     for path in paths:
         logging.debug("Working on %s" % path)
         source = Path(path)
         if not source.exists():
             raise FileNotFoundError("Could not find: %s" % str(source))
 
-        data = swith(salmon, sleuth)(str(source))
+        data = switch(salmon, sleuth)(str(source))
         sample_id = str(source)
         sample_id = sample_id if suffix == "" else sample_id[:-len(suffix)]
         sample_id = sample_id if prefix == "" else sample_id[len(prefix):]
@@ -175,6 +176,7 @@ def main(*paths: "Multiple paths to TSV files",
         data = data[[col]]
         data.columns = [sample_id]
 
+        # Merge with existing data
         try:
             if sleuth:
                 merged_frame = pd.merge(
@@ -198,6 +200,7 @@ def main(*paths: "Multiple paths to TSV files",
     logging.debug(merged_frame.shape)
     logging.debug(merged_frame.head())
 
+    # Additional behaviours
     if drop_null:
         logging.debug("Removing null lines")
         logging.debug("Shape: %s" % str(merged_frame.shape))

@@ -4,7 +4,7 @@
 """
 Plot a PCA on selected samples
 
-Unlincence terms of use:
+Unlincense terms of use:
 This is free and unencumbered software released into the public domain.
 
 Anyone is free to copy, modify, publish, use, compile, sell, or
@@ -91,6 +91,7 @@ def main(*salmon_paths: "Path to salmon files",
 
     logging.debug("Building graph")
     sns.set(style="darkgrid")
+    # Handle the lack of condition
     try:
         results["Conditions"] = conditions.split(",")
         g = sns.FacetGrid(results, hue="Conditions")

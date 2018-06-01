@@ -5,7 +5,7 @@
 This script is here to handle StringTie unpleasant habit
 to rename known transcripts
 
-Unlincence terms of use:
+Unlincense terms of use:
 This is free and unencumbered software released into the public domain.
 
 Anyone is free to copy, modify, publish, use, compile, sell, or
@@ -93,6 +93,7 @@ def main(*gtf: List[str], merged=False) -> None:
         out_file = Path(gtf_path.parent, "%s_renamed.gtf" % gtf_path.stem)
         assert not out_file.exists(), "%s already exists" % str(out_file)
 
+        # Call of the generator in order to write the whole file
         out_file.write_text("\n".join(list(gtf_generator(gtf_path, merged))))
 
 

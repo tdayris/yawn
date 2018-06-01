@@ -4,7 +4,7 @@
 """
 Plot a violin plot of the variation of length of selected genes
 
-Unlincence terms of use:
+Unlincense terms of use:
 This is free and unencumbered software released into the public domain.
 
 Anyone is free to copy, modify, publish, use, compile, sell, or
@@ -45,6 +45,7 @@ def readSalmon(*paths: "Multiple paths to Salmon files",
                gencode: "Remove dots in target id"=False):
     """Return a DataFrame from salmon files"""
     frames = None
+    # Iterate over files and get target's lengths
     for path in paths:
         logging.debug("Reading Salmon file: %s" % path)
         data = pd.read_csv(path, sep="\t", header=0, index_col=0)
@@ -59,6 +60,7 @@ def readSalmon(*paths: "Multiple paths to Salmon files",
     frames.reset_index(inplace=True)
     frames.columns = ["target_id", "Sample", "Length"]
 
+    # If gencoe, recover transcript names
     if gencode:
         frames["target_id"] = frames["target_id"].str.extract(
             '(.+).',
@@ -92,6 +94,7 @@ def readSleuth(path: "Path to a Sleuth file",
                                   "Up-Regulated",
                                   "Down-Regulated")
 
+    # if gencode, recover target's names
     if gencode:
         data.reset_index(inplace=True)
         data.columns = ["target_id", "Log2FC", "Regulation"]
