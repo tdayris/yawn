@@ -41,7 +41,7 @@ from typing import List
 
 
 def main(cls_file: str,
-         gmt_like_file: str,
+         gct_file: str,
          gene_set: str='GO_Biological_Process_2017b',
          permutation_type: str='phenotype',
          method: str="ratio_of_classes",
@@ -54,7 +54,7 @@ def main(cls_file: str,
     """
     phenoA, phenoB, class_vector = gp.parser.gsea_cls_parser(cls_file)
 
-    gene_exp = pd.read_table(gmt_like_file, header=0, index_col=0, comment="#")
+    gene_exp = pd.read_table(gct_file, header=0, index_col=0, skiprows=2)
 
     gs_res = gp.gsea(
         data=gene_exp,
@@ -65,8 +65,14 @@ def main(cls_file: str,
         gene_sets=gene_set,
         method=method,
         processes=threads,
-        format=format
+        format=format,
+        graph_num=50
     )
+
+    # gsea_res = gs_res.res2d
+    # with plt.style.context('ggplot'):
+    #     gsea_res.reset_index(inplace=True)
+    #     gsea_res.plot.barh(y='fdr', x='Term', fontsize=16)
 
 
 if __name__ == '__main__':
@@ -78,22 +84,24 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        "gmt_like_file",
+        "gct_file",
         help="Path to a gmt-like file with second line discarded",
         type=str
     )
 
     parser.add_argument(
         "-g", "--gene_set",
-        help="Gene set name",
+        help="Gene set name"
+             " (default: %(default)s)",
         type=str,
         choices=gp.get_library_name(),
-        default='KEGG_2017'
+        default='KEGG_2016'
     )
 
     parser.add_argument(
         "-p", "--permutation_type",
-        help="Type of permutation used within GSEA",
+        help="Type of permutation used within GSEA"
+             " (default: %(default)s)",
         type=str,
         choices=['gene_set', 'phenotype'],
         default='phenotype'
@@ -101,14 +109,16 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "-o", "--output_dir",
-        help="Path to output_dir",
+        help="Path to output_dir"
+             " (default: %(default)s)",
         type=str,
         default='gsea_report'
     )
 
     parser.add_argument(
         "-f", "--format",
-        help="Output format for all figures",
+        help="Output format for all figures"
+             " (default: %(default)s)",
         type=str,
         choices=['pdf', 'png', 'jpeg', 'ps', 'eps', 'svg'],
         default="pdf"
@@ -116,14 +126,16 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "-n", "--permutation_num",
-        help="Number of permutation used within GSEA",
+        help="Number of permutation used within GSEA"
+             " (default: %(default)i)",
         type=int,
         default=1000
     )
 
     parser.add_argument(
         "-m", "--method",
-        help="Methods to calculate correlations of ranking metrics",
+        help="Methods to calculate correlations of ranking metrics"
+             " (default: %(default)s)",
         type=str,
         choices=['signal_to_noise', 't_test', 'ratio_of_classes',
                  'diff_of_classes', 'log2_ratio_of_classes'],
@@ -132,7 +144,8 @@ if __name__ == '__main__':
 
     parser.add_argument(
         "-t", "--threads",
-        help="Maximum number of threads used",
+        help="Maximum number of threads used"
+             " (default: %(default)i)",
         type=int,
         default=1
     )
