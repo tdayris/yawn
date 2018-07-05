@@ -64,29 +64,30 @@ def readSalmon(*paths: "Multiple paths to Salmon files"):
 @begin.tracebacks
 @begin.convert(salmon_paths=str, title=str, output=str, legend_position=str,
                conditions=str, show=begin.utils.tobool)
-def main(*salmon_paths: "Path to salmon files",
-         title: "The title of the graph"=
-                "PCA of sample abundance over principal axis",
+def main(normalized_table: "Path to TPM file",
          output: "Path to the output file"="PCA.png",
          legend_position: "Position of the legend"="upper center",
          conditions: "Comma separated list of conditions per sample"=None,
          show: "Should the graph be displayed instead of saved ?"=False):
     """Plot a PCA on selected samples"""
     # Load datasets
-    data = readSalmon(*salmon_paths)
+    data = pd.read_csv(normalized_table, sep="\t", header=0, index_col=0)
+    data = data[list(data.select_dtypes(include=[np.number]).columns.values)]
 
     # Perform pca
     logging.debug("Computing components")
-    nbc = len(salmon_paths)
+    nbc = len(data.columns.tolist())
     skpca = skd.PCA(n_components=nbc)
 
     # Prepare plots
     logging.debug("Fitting results")
     sktransform = skpca.fit_transform(data.T)
+    print(data.T.head())
+    skvar = skpca.explained_variance_ratio_
     results = pd.DataFrame(
         sktransform,
         columns=["PC_%i" % i for i in range(1, nbc+1, 1)],
-        index=salmon_paths
+        index=data.columns.tolist()
     )
 
     logging.debug("Building graph")
@@ -98,8 +99,10 @@ def main(*salmon_paths: "Path to salmon files",
     except AttributeError:
         g = sns.FacetGrid(results)
 
+    marks = ['$%s$' % i for i in results.index.tolist()]
     g = g.map(plt.scatter, "PC_1", "PC_2")
-    plt.title(title)
+
+    plt.title("PC 1 (%.2f%%) and 2 (%.2f%%)" % (skvar[0] * 100, skvar[1] * 100))
     try:
         frame = plt.legend(loc=legend_position, frameon=True).get_frame()
         frame.set_facecolor("white")

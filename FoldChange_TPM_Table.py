@@ -92,8 +92,9 @@ def main(numreads: "Path to a tsv file with the raw number of reads",
         logging.debug("Computing FC for %s / %s" % cs)
         c1, c2 = cs
         ratio = data["mean(%s)" % c1] / data["mean(%s)" % c2]
+        # ratio = data["mean(%s)" % c1].div(data["mean(%s)" % c2])
         data["FC(%s/%s)" % cs] = [
-            -1/r if r < 1 else r for r in ratio
+            -1/r if 0 < r < 1 else (pd.np.NaN if r == 0 else r) for r in ratio
         ]
 
     # Saving
