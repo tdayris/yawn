@@ -36,6 +36,7 @@ import argparse
 import begin
 import itertools
 import logging
+import numpy as np
 import os
 import pandas as pd
 import traceback
@@ -61,11 +62,13 @@ def main(numreads: "Path to a tsv file with the raw number of reads",
 
     ratio = mean(counts obs) / mean(count ref)
     """
+    foldchanges = pd.DataFrame()
     # Loading datasets
     if os.path.exists(output):
         raise FileExistsError("%s already exists" % output)
 
     data = pd.read_csv(numreads, header=0, sep="\t", index_col=0)
+    data = data[list(data.select_dtypes(include=[np.number]).columns.values)]
     samples = data.columns.tolist()
     logging.debug("Data loaded")
 
@@ -93,10 +96,10 @@ def main(numreads: "Path to a tsv file with the raw number of reads",
         c1, c2 = cs
         ratio = data["mean(%s)" % c1] / data["mean(%s)" % c2]
         # ratio = data["mean(%s)" % c1].div(data["mean(%s)" % c2])
-        data["FC(%s/%s)" % cs] = [
+        foldchanges["FC(%s/%s)" % cs] = [
             -1/r if 0 < r < 1 else (pd.np.NaN if r == 0 else r) for r in ratio
         ]
 
     # Saving
     logging.debug("Saving data")
-    data.to_csv(output, sep="\t")
+    foldchanges.to_csv(output, sep="\t")
