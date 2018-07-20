@@ -112,17 +112,17 @@ def main(normalized_table: "Path to a normalized quantification table",
         col_cluster=col_cluster,
         col_colors=(condition_colors if col_condition_color else None),
         linewidths=0.5,
-        figsize=(13, 13),
+        figsize=(15, 15),
         square=square,
         robust=robust
     )
 
     plt.setp(
         ax.ax_heatmap.yaxis.get_majorticklabels(),
-        rotation=xlabel_rotation)
+        rotation=ylabel_rotation)
     plt.setp(
         ax.ax_heatmap.xaxis.get_majorticklabels(),
-        rotation=ylabel_rotation
+        rotation=xlabel_rotation
     )
 
     if show:
