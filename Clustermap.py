@@ -45,6 +45,12 @@ import traceback
 @begin.start
 @begin.logging
 @begin.tracebacks
+@begin.convert(normalized_table=str, condition_array=str, title=str,
+               output=str, xlabel_rotation=int, ylabel_rotation=int,
+               row_cluster=begin.utils.tobool, col_cluster=begin.utils.tobool,
+               row_colors=begin.utils.tobool, col_colors=begin.utils.tobool,
+               show=begin.utils.tobool, square=begin.utils.tobool,
+               robust=begin.utils.tobool)
 def main(normalized_table: "Path to a normalized quantification table",
          *condition_array: "Condition name per sample (space separated)",
          title: "Graph title"="Clustered Heatmap",
