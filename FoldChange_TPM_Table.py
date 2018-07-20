@@ -99,6 +99,8 @@ def main(numreads: "Path to a tsv file with the raw number of reads",
         foldchanges["FC(%s/%s)" % cs] = [
             -1/r if 0 < r < 1 else (pd.np.NaN if r == 0 else r) for r in ratio
         ]
+    foldchanges["GeneIdentifier"] = data.index.tolist()
+    foldchanges.set_index("GeneIdentifier", inplace=True)
 
     # Saving
     logging.debug("Saving data")
