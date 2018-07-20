@@ -14,13 +14,15 @@ import traceback
 @begin.logging
 @begin.tracebacks
 @begin.convert(sleuth=str, expression=str, qval=float,
-               output=str, max_target=int, condition_array=str)
+               output=str, max_target=int, condition_array=str,
+               show=begin.utils.tobool)
 def main(sleuth: "Path to a sleuth tsv file",
          expression: "Path to an expression file",
          *condition_array: "Space separated list of condition per sample",
          qval: "Q-value threashold"=0.01,
          max_target: "Maximum number of targets"=100,
-         output: "Path to output file"="Target_clustermap.png"):
+         output: "Path to output file"="Target_clustermap.png",
+         show: "Should the graph be displayed instead of saved ?"=False):
     # Loas sleuth data
     sleuth = pd.read_csv(
         sleuth,
@@ -91,4 +93,7 @@ def main(sleuth: "Path to a sleuth tsv file",
         rotation=90
     )
 
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        plt.savefig(output, bbox_inches="tight")
