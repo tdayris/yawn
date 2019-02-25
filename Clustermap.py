@@ -40,32 +40,28 @@ import os.path as op
 import pandas as pd
 import seaborn as sns
 import traceback
+import yaml
 
 
 @begin.start
 @begin.logging
 @begin.tracebacks
-@begin.convert(normalized_table=str, condition_array=str, title=str,
-               output=str, xlabel_rotation=int, ylabel_rotation=int,
-               row_cluster=begin.utils.tobool, col_cluster=begin.utils.tobool,
-               row_colors=begin.utils.tobool, col_colors=begin.utils.tobool,
-               show=begin.utils.tobool, square=begin.utils.tobool,
-               robust=begin.utils.tobool)
 def main(normalized_table: "Path to a normalized quantification table",
          *condition_array: "Condition name per sample (space separated)",
-         title: "Graph title"="Clustered Heatmap",
-         output: "Path to output file"="Clustered_Heatmap.png",
-         xlabel_rotation: "The X label rotation"=0,
-         ylabel_rotation: "The Y label rotation"=90,
-         row_cluster: "Perform clustering on rows"=True,
-         col_cluster: "Perform clustering on columns"=True,
+         title: "Graph title" = "Clustered Heatmap",
+         output: "Path to output file" = "Clustered_Heatmap.png",
+         xlabel_rotation: "The X label rotation" = 0,
+         ylabel_rotation: "The Y label rotation" = 90,
+         row_cluster: "Perform clustering on rows" = True,
+         col_cluster: "Perform clustering on columns" = True,
          row_condition_color: "Set colors on rows according to "
-                              "condition array"=True,
+                              "condition array" = True,
          col_condition_color: "Set colors on columns according to "
-                              "condition array"=True,
-         show: "Should the graph be displayed instead of saved ?"=False,
-         square: "Plot half of the heatmap"=False,
-         robust: "use robust quantiles instead of the extreme values"=False):
+                              "condition array" = True,
+         show: "Should the graph be displayed instead of saved ?" = False,
+         square: "Plot half of the heatmap" = False,
+         robust: "use robust quantiles instead of the extreme values" = False,
+         multiqc_yaml_config: "Output a MultiQC yaml config" = False) -> None:
     """
     Plot a clustered heatmap of multiple sample
 
@@ -78,6 +74,8 @@ def main(normalized_table: "Path to a normalized quantification table",
     data = data[list(data.select_dtypes(include=[np.number]).columns.values)]
     logging.debug(data.head())
     if len(data.columns.tolist()) != len(condition_array):
+        print(data.columns.tolist())
+        print(condition_array)
         raise ValueError(
             "Expected the same number of condition and samples"
             ", got different ones %i / %i" % (
@@ -95,43 +93,66 @@ def main(normalized_table: "Path to a normalized quantification table",
         sns.husl_palette(len(set(condition_array)), s=.45)  # Color palette
     ))
 
-    # Horrible bunch of code to perform multilevel indexing
-    data = data.T
-    data["Conditions"] = condition_array
-    data = (data.reset_index()
-                .set_index(["Conditions", "index"])
-                .T)
+    if multiqc_yaml_config is False:
+        data = data.corr()
+        yaml_dict = {
+            "id": "sample_heatmap",
+            "section_name": "Sample Heatmap",
+            "description": "Correlation rates",
+            "plot_type": "heatmap",
+            "sortRows": True,
+            "pconfig": {
+                "id": "sample_heatmap"
+            },
+            "data": data.to_dict()
+        }
 
-    # Convert the palette to vectors
-    condition_colors = (pd.Series(condition_array, index=data.columns)
-                          .map(condition_lut))
+        with open("%s_mqc.yaml" % output, "w") as yout:
+            content = yaml.dump(yaml_dict, default_flow_style=False)
+            yout.write(content)
 
-    data = data.corr()
-    logging.debug(data.head())
-
-    # Draw the full plot
-    ax = sns.clustermap(
-        data,
-        cmap=cmap,
-        row_colors=(condition_colors if row_condition_color else None),
-        row_cluster=row_cluster,
-        col_cluster=col_cluster,
-        col_colors=(condition_colors if col_condition_color else None),
-        linewidths=0.5,
-        figsize=(15, 15),
-        square=square,
-        robust=robust
-    )
-
-    plt.setp(
-        ax.ax_heatmap.yaxis.get_majorticklabels(),
-        rotation=ylabel_rotation)
-    plt.setp(
-        ax.ax_heatmap.xaxis.get_majorticklabels(),
-        rotation=xlabel_rotation
-    )
-
-    if show:
-        plt.show()
     else:
-        plt.savefig(output, bbox_inches="tight")
+        # Horrible bunch of code to perform multilevel indexing
+        data = data.T
+        data["Conditions"] = condition_array
+        data = (data.reset_index()
+                    .set_index(["Conditions", "index"])
+                    .T)
+
+        # Convert the palette to vectors
+        condition_colors = (pd.Series(condition_array, index=data.columns)
+                              .map(condition_lut))
+
+        data = data.corr()
+        logging.debug(data.head())
+
+        # Draw the full plot
+        ax = sns.clustermap(
+            data,
+            cmap=cmap,
+            row_colors=(condition_colors if row_condition_color else None),
+            row_cluster=row_cluster,
+            col_cluster=col_cluster,
+            col_colors=(condition_colors if col_condition_color else None),
+            linewidths=0.5,
+            figsize=(
+                (15 if len(data.columns.tolist()) <= 50 else 30),
+                (15 if len(data.index.tolist()) < 50 else 30)
+            ),
+            square=square,
+            robust=robust
+        )
+
+        plt.setp(
+            ax.ax_heatmap.yaxis.get_majorticklabels(),
+            rotation=xlabel_rotation)
+        plt.setp(
+            ax.ax_heatmap.xaxis.get_majorticklabels(),
+            rotation=ylabel_rotation
+        )
+
+        if show:
+            plt.tight_layout()
+            plt.show()
+        else:
+            plt.savefig(output, bbox_inches="tight")

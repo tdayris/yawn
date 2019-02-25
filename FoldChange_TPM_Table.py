@@ -46,10 +46,11 @@ import traceback
 @begin.logging
 @begin.tracebacks
 @begin.convert(numreads=str, condition_array=str, output=str,
-               output_excel=begin.utils.tobool)
+               merge=begin.utils.tobool)
 def main(numreads: "Path to a tsv file with the raw number of reads",
          *condition_array: "Space separated list of conditions",
-         output: "Path to output file"="FC.tsv"):
+         output: "Path to output file" = "FC.tsv",
+         merge: "Output both counts and Fold changes in a same file" = False):
     """
     Read a NumRead file from a tsv-formatted count-file and return a FoldChange
     This script accepts n conditions and will perform permutations over the
@@ -91,17 +92,35 @@ def main(numreads: "Path to a tsv file with the raw number of reads",
         logging.debug("Computing mean count per target over %s" % c)
         data["mean(%s)" % c] = data[s].mean(axis=1)
 
-    for cs in itertools.permutations(samples_to_conditions.keys(), 2):
-        logging.debug("Computing FC for %s / %s" % cs)
-        c1, c2 = cs
-        ratio = data["mean(%s)" % c1] / data["mean(%s)" % c2]
-        # ratio = data["mean(%s)" % c1].div(data["mean(%s)" % c2])
-        foldchanges["FC(%s/%s)" % cs] = [
-            -1/r if 0 < r < 1 else (pd.np.NaN if r == 0 else r) for r in ratio
-        ]
-    foldchanges["GeneIdentifier"] = data.index.tolist()
-    foldchanges.set_index("GeneIdentifier", inplace=True)
+    if merge:
+        for cs in itertools.permutations(samples_to_conditions.keys(), 2):
+            logging.debug("Computing FC for %s / %s" % cs)
+            c1, c2 = cs
+            ratio = data["mean(%s)" % c1] / data["mean(%s)" % c2]
+            # ratio = data["mean(%s)" % c1].div(data["mean(%s)" % c2])
+            data["FC(%s/%s)" % cs] = [
+                -1/r if 0 < r < 1 else (pd.np.NaN if r == 0 else r)
+                for r in ratio
+            ]
+        data["GeneIdentifier"] = data.index.tolist()
+        data.set_index("GeneIdentifier", inplace=True)
 
-    # Saving
-    logging.debug("Saving data")
-    foldchanges.to_csv(output, sep="\t")
+        # Saving
+        logging.debug("Saving data")
+        data.to_csv(output, sep="\t")
+    else:
+        for cs in itertools.permutations(samples_to_conditions.keys(), 2):
+            logging.debug("Computing FC for %s / %s" % cs)
+            c1, c2 = cs
+            ratio = data["mean(%s)" % c1] / data["mean(%s)" % c2]
+            # ratio = data["mean(%s)" % c1].div(data["mean(%s)" % c2])
+            foldchanges["FC(%s/%s)" % cs] = [
+                -1/r if 0 < r < 1 else (pd.np.NaN if r == 0 else r)
+                for r in ratio
+            ]
+        foldchanges["GeneIdentifier"] = foldchanges.index.tolist()
+        foldchanges.set_index("GeneIdentifier", inplace=True)
+
+        # Saving
+        logging.debug("Saving data")
+        foldchanges.to_csv(output, sep="\t")

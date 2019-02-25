@@ -39,8 +39,13 @@ import traceback
 from pathlib import Path
 
 
-@begin.convert(salmon=begin.utils.tobool, sleuth=begin.utils.tobool)
-def switch(salmon, sleuth) -> pd.DataFrame:
+@begin.convert(salmon=begin.utils.tobool,
+               sleuth=begin.utils.tobool,
+               whippet_jnc=begin.utils.tobool,
+               whippet_tpm=begin.utils.tobool,
+               whippet_psi=begin.utils.tobool)
+def switch(salmon, sleuth, whippet_jnc,
+           whippet_tpm, whippet_psi) -> pd.DataFrame:
     """
     Calls the right function
     """
@@ -48,11 +53,18 @@ def switch(salmon, sleuth) -> pd.DataFrame:
         return salmon_reader
     elif sleuth:
         return sleuth_reader
+    elif whippet_jnc:
+        return whippet_jnc_reader
+    elif whippet_tpm:
+        return whippet_tpm_reader
+    elif whippet_psi:
+        return whippet_psi_reader
     return generic_reader
 
 
 @begin.convert(path=str)
-def read_t2g(path: "Path to a T2G tsv file") -> pd.DataFrame:
+def read_t2g(path: "Path to a T2G tsv file",
+             genes: "Return genes only") -> pd.DataFrame:
     """
     T2G are three columned tsv files with:
 
@@ -62,6 +74,10 @@ def read_t2g(path: "Path to a T2G tsv file") -> pd.DataFrame:
     """
     t2g = pd.read_csv(path, sep="\t", header=None, index_col=1)
     t2g.columns = ["Ensembl_ID", "Hugo_ID"]
+    if genes:
+        t2g = (t2g.reset_index()[["Ensembl_ID", "Hugo_ID"]]
+                  .drop_duplicates()
+                  .set_index("Ensembl_ID"))
     return t2g
 
 
@@ -92,6 +108,72 @@ def salmon_reader(path: "Path to a tsv file") -> pd.DataFrame:
         },
         na_values=""
     )
+
+
+@begin.convert(path=str)
+def whippet_tpm_reader(path: "Path to a tsv file") -> pd.DataFrame:
+    """
+    The Whippet quant tpm specific reader
+    """
+    return pd.read_csv(
+        path,
+        sep="\t",
+        index_col=0,
+        header=0,
+        dtype={
+            0: str,
+            1: pd.np.float,
+            2: pd.np.float
+        }
+    )
+
+
+@begin.convert(path=str)
+def whippet_jnc_reader(path: "Path to a tsv file") -> pd.DataFrame:
+    """
+    The Whippet quant junctions specific reader
+    """
+    return pd.read_csv(
+        path,
+        sep="\t",
+        index_col=4,
+        header=0,
+        dtype={
+            0: category,
+            1: pd.np.int,
+            2: pd.np.int,
+            3: str,
+            4: pd.np.float,
+            5: category
+        }
+    )
+
+
+@begin.convert(path=str)
+def whippet_psi_reader(path: "Path to a tsv file") -> pd.DataFrame:
+    """
+    The Whippet quant junctions specific reader
+    """
+    return pd.read_csv(
+        path,
+        sep="\t",
+        index_col=False,
+        header=0,
+        dtype={
+            0: str,
+            1: pd.np.int,
+            2: str,
+            3: str,
+            4: str,
+            5: pd.np.float,
+            6: pd.np.float,
+            7: str,
+            8: pd.np.float,
+            9: str,
+            10: pd.np.float,
+            11: str
+        }
+    ).set_index("Coord")
 
 
 @begin.convert(path=str)
@@ -126,23 +208,31 @@ def sleuth_reader(path: "Path to a tsv file") -> pd.DataFrame:
 @begin.start
 @begin.logging
 @begin.tracebacks
-@begin.convert(path=str, col=str, output=str, prefix=str, suffix=str,
+@begin.convert(col=str, output=str, prefix=str, suffix=str,
                index_label=begin.utils.tobool, stack=begin.utils.tobool,
-               salmon=begin.utils.tobool, sleuth=begin.utils.tobool)
+               salmon=begin.utils.tobool, sleuth=begin.utils.tobool,
+               whippet_jnc=begin.utils.tobool, whippet_tpm=begin.utils.tobool,
+               whippet_psi=begin.utils.tobool, drop_null=begin.utils.tobool,
+               drop_na=begin.utils.tobool, genes=begin.utils.tobool)
 def main(*paths: "Multiple paths to TSV files",
-         col: "Name of the column that it to be joined"="TPM",
-         output: "Path to the output file"="Frames.tsv",
+         col: "Name of the column that it to be joined" = "TPM",
+         output: "Path to the output file" = "Frames.tsv",
          prefix: "The prefix to be removed to get "
-                 "sample name from its file name"="",
+                 "sample name from its file name" = "",
          suffix: "The suffix to be removed to get "
-                 "sample name from its file name"="",
-         index_label: "Should the index be labelled ?"=True,
-         stack: "Should dataset be stacked ?"=False,
-         salmon: "All files are Salmon files"=False,
-         sleuth: "All files are Sleuth files"=False,
-         drop_null: "Remove unused targets"=False,
-         drop_na: "Remove full NaN lines"=False,
-         tr2g: "Path to a Transcript to Gene table"=None) -> None:
+                 "sample name from its file name" = "",
+         index_label: "Should the index be labelled ?" = True,
+         stack: "Should dataset be stacked ?" = False,
+         salmon: "All files are Salmon files" = False,
+         sleuth: "All files are Sleuth files" = False,
+         whippet_psi: "All files are Whippet PSI files" = False,
+         whippet_jnc: "All files are Whippet junction files" = False,
+         whippet_tpm: "All files are Whippet count files" = False,
+         drop_null: "Remove unused targets" = False,
+         drop_na: "Remove full NaN lines" = False,
+         drop_path_id: "Remove dots at the end of target ids" = False,
+         genes: "Target id are genes ID and not Transcript ones" = False,
+         tr2g: "Path to a Transcript to Gene table" = None) -> None:
     """
     This script reads several tsv files one after another. It relies over the
     follwing assumptions:
@@ -156,9 +246,9 @@ def main(*paths: "Multiple paths to TSV files",
     """
     merged_frame = None
     destin = Path(output)
-    parser = switch(salmon, sleuth)
-    if destin.exists():
-        raise FileExistsError("Output file already exists: %s" % str(destin))
+    parser = switch(salmon, sleuth, whippet_jnc, whippet_tpm, whippet_psi)
+    # if destin.exists():
+    #     raise FileExistsError("Output file already exists: %s" % str(destin))
 
     # Read files
     for path in paths:
@@ -167,7 +257,9 @@ def main(*paths: "Multiple paths to TSV files",
         if not source.exists():
             raise FileNotFoundError("Could not find: %s" % str(source))
 
-        data = switch(salmon, sleuth)(str(source))
+        data = switch(
+            salmon, sleuth, whippet_jnc, whippet_tpm, whippet_psi
+        )(str(source))
         sample_id = str(source)
         sample_id = sample_id if suffix == "" else sample_id[:-len(suffix)]
         sample_id = sample_id if prefix == "" else sample_id[len(prefix):]
@@ -195,12 +287,23 @@ def main(*paths: "Multiple paths to TSV files",
             merged_frame = data
         except AttributeError:
             merged_frame = data
+        except TypeError:
+            merged_frame = data
+
+    merged_frame.fillna(0)
 
     logging.debug("Frames merged.")
     logging.debug(merged_frame.shape)
     logging.debug(merged_frame.head())
 
     # Additional behaviours
+    if drop_path_id:
+        logging.debug("Removing patch from target ids")
+        merged_frame = merged_frame.set_index(
+            pd.DataFrame(merged_frame.index.str.split(".", 1).tolist())[0]
+        )
+        logging.debug(merged_frame.head())
+
     if drop_null:
         logging.debug("Removing null lines")
         logging.debug("Shape: %s" % str(merged_frame.shape))
@@ -230,7 +333,7 @@ def main(*paths: "Multiple paths to TSV files",
         logging.debug("Adding Genes names")
         merged_frame = pd.merge(
             merged_frame,
-            read_t2g(tr2g),
+            read_t2g(tr2g, genes),
             left_index=True,
             right_index=True,
             how="left"

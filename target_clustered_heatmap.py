@@ -15,14 +15,15 @@ import traceback
 @begin.tracebacks
 @begin.convert(sleuth=str, expression=str, qval=float,
                output=str, max_target=int, condition_array=str,
-               show=begin.utils.tobool)
+               show=begin.utils.tobool, yellow_blue=begin.utils.tobool)
 def main(sleuth: "Path to a sleuth tsv file",
          expression: "Path to an expression file",
          *condition_array: "Space separated list of condition per sample",
-         qval: "Q-value threashold"=0.01,
-         max_target: "Maximum number of targets"=100,
-         output: "Path to output file"="Target_clustermap.png",
-         show: "Should the graph be displayed instead of saved ?"=False):
+         qval: "Q-value threashold" = 0.01,
+         max_target: "Maximum number of targets" = 100,
+         output: "Path to output file" = "Target_clustermap.png",
+         blue: "Instead of blue->red colors" = False,
+         show: "Should the graph be displayed instead of saved ?" = False):
     # Loas sleuth data
     sleuth = pd.read_csv(
         sleuth,
@@ -45,6 +46,10 @@ def main(sleuth: "Path to a sleuth tsv file",
         index_col=0
     )
 
+    expression = expression[
+        list(expression.select_dtypes(include=[np.number]).columns.values)
+    ]
+
     expression = pd.merge(
         sleuth[["ext_gene"]],
         expression,
@@ -55,8 +60,17 @@ def main(sleuth: "Path to a sleuth tsv file",
     expression.set_index("ext_gene", inplace=True)
     logging.debug(expression.head())
 
-    # Create a custom colormap for the heatmap values
-    cmap = sns.diverging_palette(h_neg=240, h_pos=10, as_cmap=True)
+    # Horrible bunch of code to perform multilevel indexing
+    try:
+        expression = expression.T
+        expression["Conditions"] = condition_array
+    except ValueError:
+        print(expression.index.tolist(), condition_array)
+        raise
+
+    expression = (expression.reset_index()
+                            .set_index(["Conditions", "index"])
+                            .T)
 
     # Create a categorical palette to identify the networks
     condition_lut = dict(zip(
@@ -64,28 +78,31 @@ def main(sleuth: "Path to a sleuth tsv file",
         sns.husl_palette(len(set(condition_array)), s=.45)  # Color palette
     ))
 
-    # Horrible bunch of code to perform multilevel indexing
-    expression = expression.T
-    expression["Conditions"] = condition_array
-    expression = (expression.reset_index()
-                            .set_index(["Conditions", "index"])
-                            .T)
-
     # Convert the palette to vectors
     condition_colors = (pd.Series(condition_array, index=expression.columns)
                           .map(condition_lut))
+
+    yl = sns.diverging_palette(
+        h_neg=70,
+        h_pos=240,
+        sep=40,
+        as_cmap=True
+    )
 
     # Draw the full plot
     ax = sns.clustermap(
         expression,
         z_score=0,
-        robust=True,
+        # robust=True,
         xticklabels=True,
         yticklabels=True,
-        cmap="vlag",
+        cmap=("vlag" if not blue else "blues"),
         linewidths=.75,
         col_colors=condition_colors,
-        figsize=(min(len(sleuth), max_target), 15)
+        figsize=(
+            (15 if len(sleuth.columns.tolist()) <= 50 else 30),
+            (15 if len(sleuth.index.tolist()) < 50 else 30)
+        )
     )
 
     plt.setp(

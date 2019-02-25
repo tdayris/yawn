@@ -42,17 +42,35 @@ import seaborn as sns
 import traceback
 
 
+@begin.convert(stat_threshold=float, beta_threshold=float)
+def classify(betas, stats, beta_threshold, stat_threshold):
+    """
+    Yields a classification of events
+    """
+    for b, s in zip(betas, stats):
+        if s <= stat_threshold:
+            if abs(b) >= beta_threshold:
+                yield "Differentially Expressed"
+            else:
+                yield "Below beta threshold"
+        else:
+            yield "Below significance threshold"
+
+
 @begin.start
 @begin.logging
 @begin.tracebacks
-@begin.convert(sleuth_path=str, title=str, output=str,
-               qval=begin.utils.tobool, show=begin.utils.tobool)
+@begin.convert(sleuth_path=str, output=str, stat_threshold=float,
+               beta_threshold=float, qval=begin.utils.tobool,
+               show=begin.utils.tobool)
 def main(sleuth_path: "Path to a sleuth file",
-         title: "Title of the graph"="Volcano plot",
-         output: "Path to the output file"="Volcanoplot.png",
-         qval: "Use Q-Value instead of P-Value in the volcano plot"=False,
-         plot: "Should the graph be displayed instead of saved ?"=False,
-         show: "Should the graph be displayed instead of saved ?"=False):
+         output: "Path to the output file" = "Volcanoplot.png",
+         stat_threshold: "The threshold above which "
+                         "targets are diff. exp." = 0.05,
+         beta_threshold: "The threshold above which "
+                         "fold changes are significant" = 1,
+         qval: "Use P-Value instead of Q-Value in the volcano plot" = True,
+         show: "Should the graph be displayed instead of saved ?" = False):
     """Plot a volcanoplot from a sleuth file"""
     logging.debug("Reading Sleuth file: %s" % sleuth_path)
 
@@ -63,8 +81,11 @@ def main(sleuth_path: "Path to a sleuth file",
     col = "qval" if qval else "pval"
     col_name = "-Log10(%s)" % ("Q-Value" if qval else "P-Value")
     data = data[[col, "b"]]
-    data[col] = -np.log10(data[col])
-    data.columns = [col_name, "Log2(FC)"]
+    data.columns = [col_name, "Log2(beta)"]
+    data["Significance"] = list(classify(
+        data["Log2(beta)"], data[col_name], beta_threshold, stat_threshold
+    ))
+    data[col_name] = [0 if d == 0 else -np.log10(d) for d in data[col_name]]
     logging.debug(data.head())
 
     logging.debug("Building graph")
@@ -73,16 +94,40 @@ def main(sleuth_path: "Path to a sleuth file",
     sns.set(style="ticks", palette="pastel", color_codes=True)
 
     # Content
-    g = sns.JointGrid(x="Log2(FC)", y=col_name, data=data)
-    g = g.plot_joint(plt.scatter, color="black", edgecolor="black")
-    try:
-        _ = g.ax_marg_x.hist(data["Log2(FC)"], color="b", bins=30)
-        _ = g.ax_marg_y.hist(data[col_name], color="r",
-                             orientation="horizontal", bins=30)
-    except ValueError:
-        _ = g.ax_marg_x.hist(data["Log2(FC)"].dropna(), color="b", bins=30)
-        _ = g.ax_marg_y.hist(data[col_name].dropna(), color="r", bins=30,
-                             orientation="horizontal")
+    g = sns.lmplot(
+        x="Log2(beta)",
+        y=col_name,
+        hue="Significance",
+        hue_order=[
+            "Below significance threshold",
+            "Below beta threshold",
+            "Differentially Expressed"
+        ],
+        data=data,
+        palette="Blues",
+        fit_reg=False
+    )
+    g.map(
+        plt.axhline,
+        y=-np.log10(stat_threshold),
+        ls=":",
+        c=".5",
+        markersize=0.1
+    )
+    g.map(
+        plt.axvline,
+        x=beta_threshold,
+        ls=":",
+        c=".5",
+        markersize=0.1
+    )
+    g.map(
+        plt.axvline,
+        x=-beta_threshold,
+        ls=":",
+        c=".5",
+        markersize=0.1
+    )
 
     if show:
         plt.show()
