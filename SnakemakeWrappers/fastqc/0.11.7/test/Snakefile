@@ -1,4 +1,4 @@
-rule target:
+rule target_fastqc:
     input:
         "qc/fastqc/A_fastqc.html",
         "qc/fastqc/A_fastqc.zip"
