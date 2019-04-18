@@ -1,0 +1,19 @@
+rule target_multiqc:
+    input:
+        expand("stats/{sample}.flagstats", sample=["A", "B"])
+    output:
+        "qc/multiqc.html"
+    params:
+        extra = ""
+    threads: 1
+    conda: "../environment.yaml"
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: min(attempt * 256, 768)
+        )
+    message:
+        "Testing MultiQC_1_6"
+    log:
+        "logs/multiqc.logs"
+    wrapper:
+        "file:../"
