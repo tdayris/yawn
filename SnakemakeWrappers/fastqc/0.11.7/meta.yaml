@@ -5,5 +5,7 @@ authors:
 input:
   - fastq file
 output:
-  - html report file containing statistics
-  - zip ball containing statistics
+  - HTML report file containing statistics
+  - ZIP ball containing statistics
+testing:
+  - "cd test; snakemake --ue-conda -rp"
