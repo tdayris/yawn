@@ -1,0 +1,5 @@
+name: MultiQC_1_6
+channels:
+  - bioconda
+dependencies:
+  - multiqc=1.6
