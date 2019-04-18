@@ -5,3 +5,7 @@ SnakemakeWrappers/fastqc/0.11.7/test/qc
 SnakemakeWrappers/multiqc/1.6/test/.snakemake
 SnakemakeWrappers/multiqc/1.6/test/logs
 SnakemakeWrappers/multiqc/1.6/test/qc
+
+SnakemakeWrappers/cp/8.25/test/.snakemake
+SnakemakeWrappers/cp/8.25/test/logs
+SnakemakeWrappers/cp/8.25/test/destination/
