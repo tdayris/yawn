@@ -16,4 +16,4 @@ rule target_multiqc:
     log:
         "logs/multiqc.logs"
     wrapper:
-        "file:../"
+        "https://github.com/tdayris/yawn/tree/master/SnakemakeWrappers/multiqc/1.6"

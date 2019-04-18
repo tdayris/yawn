@@ -25,4 +25,4 @@ rule tastqc_test:
     log:
         "logs/fastqc/{sample}.log"
     wrapper:
-        "file:../"
+        "https://github.com/tdayris/yawn/tree/master/SnakemakeWrappers/fastqc/0.11.7"
