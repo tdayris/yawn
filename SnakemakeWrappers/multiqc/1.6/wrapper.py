@@ -1,4 +1,5 @@
 #!/usr/bin/python3.7
+# -*- coding: utf-8 -*-
 
 __author__ = "Thibault Dayris"
 __copyright__ = "Fish_n_CHIP 2019"

@@ -1,4 +1,5 @@
 #!/usr/bin/python3.7
+# -*- coding: utf-8 -*-
 
 """Snakemake wrapper for FastQC_0_11_7"""
 
