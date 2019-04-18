@@ -1,0 +1,9 @@
+name: "FastQC_0_11_7"
+description: "Generate fastq quality statistics and reporting"
+authors:
+  - Thibault Dayris
+input:
+  - fastq file
+output:
+  - html report file containing statistics
+  - zip ball containing statistics

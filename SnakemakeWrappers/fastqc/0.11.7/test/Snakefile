@@ -1,0 +1,28 @@
+rule target:
+    input:
+        "qc/fastqc/A_fastqc.html",
+        "qc/fastqc/A_fastqc.zip"
+    message:
+        "End of FastQC test"
+
+rule tastqc_test:
+    input:
+        "reads/{sample}.fastq"
+    output:
+        html = "qc/fastqc/{sample}_fastqc.html",
+        zip = "qc/fastqc/{sample}_fastqc.zip"
+    params:
+        extra = "",
+        tempdir = "qc/fastqc/"
+    threads: 1
+    conda: "../environment.yaml"
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: min(attempt * 256, 768)
+        )
+    message:
+        "Testing FastQC_0_11_7"
+    log:
+        "logs/fastqc/{sample}.log"
+    wrapper:
+        "file:../"
