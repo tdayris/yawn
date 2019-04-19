@@ -11,3 +11,5 @@ SnakemakeWrappers/cp/8.25/test/logs
 SnakemakeWrappers/cp/8.25/test/destination/
 
 Pipelines/Fastq_Quality_Control/test/Fastq_Quality_Control_Output/
+
+*pyc
