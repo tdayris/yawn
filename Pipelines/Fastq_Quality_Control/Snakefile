@@ -29,10 +29,7 @@ def memory(wildcards, attempt):
 
 rule Fastq_Quality_Control_target:
     input:
-        expand(
-            "fastqc/{sample}_fastqc.html",
-            sample=[f[:-len(config["fq_ext"])-1] for f in config["sample"].keys()]
-        )
+        "multiqc/quality_report.html"
 
 
 rule copy:
@@ -76,3 +73,32 @@ rule fastqc:
         tempdir = "fastqc"
     wrapper:
         "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/fastqc/0.11.7"
+
+rule multiqc:
+    input:
+        html = expand(
+            "fastqc/{sample}_fastqc.html",
+            sample=[f[:-len(config["fq_ext"])-1]
+                    for f in config["sample"].keys()]
+        ),
+        zip = expand(
+            "fastqc/{sample}_fastqc.zip",
+            sample=[f[:-len(config["fq_ext"])-1]
+                    for f in config["sample"].keys()]
+        )
+    output:
+        "multiqc/quality_report.html"
+    message:
+        "Merging quality reports from FastQC"
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: min(attempt * 128, 512)
+        )
+    threads: 1
+    log:
+        "logs/multiqc.logs"
+    params:
+        extra = "",
+        tempdir = "fastqc"
+    wrapper:
+        "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/multiqc/1.6"
