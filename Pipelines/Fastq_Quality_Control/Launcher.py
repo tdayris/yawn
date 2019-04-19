@@ -121,7 +121,7 @@ class Fastq_Quality_Control(LauncherSnakemake):
             self.workdir = os.path.realpath(self.workdir)
 
         self.sample = {
-            os.path.basename(f): f
+            os.path.basename(f): os.path.realpath(f)
             for f in self.fastq
         }
 
