@@ -23,10 +23,6 @@ singularity: config["singularity_docker_image"]
 localrule: copy
 
 
-def memory(wildcards, attempt):
-    return min(attempt * 128, 512)
-
-
 rule Fastq_Quality_Control_target:
     input:
         "multiqc/quality_report.html"

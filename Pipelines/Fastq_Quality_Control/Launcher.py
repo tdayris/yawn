@@ -22,7 +22,7 @@ __email__ = "thibault.dayris@gustaveroussy.fr"
 __license__ = "GPLV3"
 
 __all__ = ["Fastq_Quality_Control"]
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 # General importations
 import argparse
