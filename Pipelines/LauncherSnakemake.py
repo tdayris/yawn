@@ -57,7 +57,7 @@ class LauncherSnakemake(object):
 
     # General pipeline arguments with default arguments
     workdir: str = dataclasses.field(
-        default="Fastq_Quality_Control_Output",
+        default="Snakemake_output",
         init=True,
         repr=True,
         metadata={
