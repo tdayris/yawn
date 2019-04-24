@@ -1,0 +1,10 @@
+name: PCA
+description: "Build a PCA within python"
+authors:
+  - Thibault Dayris
+input:
+  - A TSV file
+output:
+  - Two PNG images of the first four axis of the PCA
+testing:
+  - "cd test; snakemake --use-conda -rp"
