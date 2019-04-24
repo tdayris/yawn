@@ -40,7 +40,8 @@ rule RNASeq_target:
         merge_quants = expand(
             "quant/{count}.tsv",
             count=["NumReads", "TPM"]
-        )
+        ),
+        PCA = ["images/TPM_PC_1_PC_2.png", "images/TPM_PC_3_PC_4.png"]
     message:
         "Finishing the Slamon pipeline"
 
@@ -208,3 +209,24 @@ rule merge_quants:
         "logs/merge_quants.log"
     wrapper:
         "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/pandamerge/1.0"
+
+
+rule PCA:
+    input:
+        "quant/TPM.tsv"
+    output:
+        "images/TPM_PC_1_PC_2.png",
+        "images/TPM_PC_3_PC_4.png"
+    message:
+        "Building PCA from {input}"
+    threads: 1
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: min(attempt * 768, 8192)
+        )
+    log:
+        "logs/PCA.logs"
+    params:
+        conditions = config["conditions"]
+    wrapper:
+        "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/PCA/1.0"

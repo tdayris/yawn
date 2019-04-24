@@ -73,6 +73,15 @@ class RNASeq(LauncherSnakemake):
             "short": "r2"
         }
     )
+    conditions: typing.List[str] = dataclasses.field(
+        default="",
+        init=True,
+        repr=False,
+        metadata={
+            "help": "Space separated list of conditions,"
+                    " corresponding to the fastq files"
+        }
+    )
     fasta_transcriptome: str = dataclasses.field(
         default=dataclasses._MISSING_TYPE(),
         init=True,
@@ -210,6 +219,11 @@ class RNASeq(LauncherSnakemake):
         self.sources = {
             os.path.basename(f): os.path.realpath(f)
             for f in [self.gtf, self.fasta_transcriptome, self.fasta_genome]
+        }
+
+        self.confitions = {
+            sample: condition
+            for sample, condition in zip(self.sample.keys(), self.conditions)
         }
 
         for up, down in zip(self.fastq_r1, self.fastq_r2):

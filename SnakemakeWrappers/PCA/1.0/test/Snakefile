@@ -21,5 +21,4 @@ rule PCA:
             "Sample4": "B"
         }
     wrapper:
-        # "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/PCA/1.0"
-        "file:/home/tdayris/Documents/Developpement/yawn/SnakemakeWrappers/PCA/1.0"
+        "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/PCA/1.0"
