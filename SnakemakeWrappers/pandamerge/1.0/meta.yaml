@@ -1,0 +1,10 @@
+name: PandasMerge
+description: "Merge tables with python pandas"
+authors:
+  - Thibault Dayris
+input:
+  - Multiple TSV files
+output:
+  - A single TSV file
+testing:
+  - "cd test; snakemake --use-conda -rp"

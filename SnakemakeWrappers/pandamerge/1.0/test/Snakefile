@@ -1,0 +1,15 @@
+rule pandas_merge:
+    input:
+        "datasets/file1.tsv",
+        "datasets/file2.tsv"
+    output:
+        Thing = "merged.tsv"
+    message:
+        "Merging {input}"
+    threads: 1
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: min(attempt * 768, 8192)
+        )
+    wrapper:
+        "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/pandamerge/1.0"
