@@ -1,0 +1,9 @@
+{
+  "__default__": {
+    "threads": "{threads}",
+    "nodes": 1,
+    "output": "oe",
+    "mail": "e",
+    "memory": "{resources.mem_mb}"
+  }
+}
