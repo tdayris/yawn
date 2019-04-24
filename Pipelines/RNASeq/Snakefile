@@ -28,21 +28,21 @@ rule RNASeq_target:
         copy = config["sample"].keys(),
         source = config["sources"].keys(),
         quant = expand(
-            "salmon/{sample}/quant.sf",
+            "quant/salmon/{sample}/quant.sf",
             sample=config["pair"].keys()
         ),
-        saindex = "salmon/transcriptome_index",
+        saindex = "quant/salmon/transcriptome_index",
         fastqc = expand(
             "fastqc/{sample}_fastqc.html",
             sample=config["sample"].keys()
         ),
-        multiqc = "multiqc/report.html"
+        multiqc = "multiqc/report.html",
+        merge_quants = expand(
+            "quant/{count}.tsv",
+            count=["NumReads", "TPM"]
+        )
     message:
         "Finishing the Slamon pipeline"
-
-
-def fq_pairs(wildcards):
-    return config["pair"][wildcards.sample]
 
 
 rule copy_fastq:
@@ -91,7 +91,7 @@ rule salmon_index:
     input:
         config["fasta_transcriptome"]
     output:
-        directory("salmon/transcriptome_index")
+        directory("quant/salmon/transcriptome_index")
     log:
         "logs/salmon/transcriptome_index.log"
     message:
@@ -108,18 +108,22 @@ rule salmon_index:
         "master/bio/salmon/index"
 
 
+def fq_pairs(wildcards):
+    return config["pair"][wildcards.sample]
+
+
 rule salmon_quant:
     input:
         unpack(fq_pairs),
-        index = ancient("salmon/transcriptome_index")
+        index = ancient("quant/salmon/transcriptome_index")
     output:
-        quant = "salmon/{sample}/quant.sf",
-        quant_genes = "salmon/{sample}/quant.genes.sf",
-        cmd = "salmon/{sample}/cmd_info.json",
-        lib = "salmon/{sample}/lib_format_counts.json",
-        aux_info = directory("salmon/{sample}/aux_info"),
-        lib_params = directory("salmon/{sample}/libParams"),
-        logs = directory("salmon/{sample}/logs")
+        quant = "quant/salmon/{sample}/quant.sf",
+        quant_genes = "quant/salmon/{sample}/quant.genes.sf",
+        cmd = temp("quant/salmon/{sample}/cmd_info.json"),
+        lib = temp("quant/salmon/{sample}/lib_format_counts.json"),
+        aux_info = temp(directory("quant/salmon/{sample}/aux_info")),
+        lib_params = temp(directory("quant/salmon/{sample}/libParams")),
+        logs = temp(directory("quant/salmon/{sample}/logs"))
     log:
         "logs/salmon/quant_{sample}.log"
     message:
@@ -164,9 +168,9 @@ rule multiqc:
                       sample=config["sample"].keys()),
         zip = expand("fastqc/{sample}_fastqc.zip",
                      sample=config["sample"].keys()),
-        cmd = expand("salmon/{sample}/cmd_info.json",
+        cmd = expand("quant/salmon/{sample}/cmd_info.json",
                      sample=config["pair"].keys()),
-        lib = expand("salmon/{sample}/lib_format_counts.json",
+        lib = expand("quant/salmon/{sample}/lib_format_counts.json",
                      sample=config["pair"].keys())
     output:
         "multiqc/report.html"
@@ -182,3 +186,25 @@ rule multiqc:
         "Gathering quality reports"
     wrapper:
         "master/bio/multiqc"
+
+
+rule merge_quants:
+    input:
+        **{
+            sample: f"quant/salmon/{sample}/quant.sf"
+            for sample in config["pair"]
+        }
+    output:
+        TPM = "quant/TPM.tsv",
+        NumReads = "quant/NumReads.tsv"
+    message:
+        "Merging all Salmon quantifications into single tables"
+    threads: 1
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: min(attempt * 768, 12288)
+        )
+    log:
+        "logs/merge_quants.log"
+    wrapper:
+        "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/pandamerge/1.0"

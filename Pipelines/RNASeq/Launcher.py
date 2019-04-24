@@ -244,6 +244,5 @@ class RNASeq(LauncherSnakemake):
 if __name__ == "__main__":
     args = RNASeq.argparser().parse_args()
     rna = RNASeq(**vars(args))
-    print(rna)
     rna.write()
     rna.run()
