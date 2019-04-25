@@ -17,4 +17,4 @@ rule cp_target:
     log:
         "logs/cp.logs"
     wrapper:
-        "https://github.com/tdayris/yawn/tree/master/SnakemakeWrappers/cp/8.25"
+        "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/cp/8.25"
