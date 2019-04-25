@@ -1,0 +1,10 @@
+name: cut (bash)
+author: Thibault Dayris
+description: Simple cu from bash.
+input:
+  - Any file.
+output:
+  - Any file.
+notes: |
+  Why ? Because on our cluster, there are some issues with bash versions
+  and it has to be taken out of any pipeline execution. So ... Here it goes.

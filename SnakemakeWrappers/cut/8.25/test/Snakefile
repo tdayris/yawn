@@ -1,0 +1,11 @@
+rule cut_target:
+    input:
+        "source/file.tsv"
+    output:
+        "destination/file.tsv"
+    params:
+        columns = 2
+    log:
+        "logs/cut.log"
+    wrapper:
+        "file:/home/tdayris/Documents/Developpement/yawn/SnakemakeWrappers/cut/8.25"
