@@ -3,9 +3,11 @@
 SnakemakeWrappers/fastqc/0.11.7/test/qc
 SnakemakeWrappers/multiqc/1.6/test/qc
 SnakemakeWrappers/cp/8.25/test/destination
+SnakemakeWrappers/cut/8.25/test/destination
 SnakemakeWrappers/pandamerge/1.0/test/tab_merge.tsv
 SnakemakeWrappers/pandamerge/1.0/test/merged.tsv
 SnakemakeWrappers/PCA/1.0/test/pca
+
 
 
 Pipelines/Fastq_Quality_Control/test/Fastq_Quality_Control_Output/
