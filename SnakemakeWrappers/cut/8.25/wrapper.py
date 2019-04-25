@@ -15,6 +15,7 @@ from snakemake.shell import shell
 # Prepare logging
 log = snakemake.log_fmt_shell(stdout=False, stderr=True)
 
+# Defining parameters
 delimiter = snakemake.params.get("delimiter", "$'\t'")
 columns = snakemake.params.get("columns", "3")
 extra = snakemake.params.get("extra", "")
@@ -26,5 +27,5 @@ shell(
     "{extra} "               # Extra parameters
     "{snakemake.input} "     # Path to input file
     "> {snakemake.output} "  # Path to output file
-    "{log}"
+    "{log}"                  # Logging
 )
