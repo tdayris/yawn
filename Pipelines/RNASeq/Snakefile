@@ -41,7 +41,10 @@ rule RNASeq_target:
             "quant/{count}.tsv",
             count=["NumReads", "TPM"]
         ),
-        PCA = ["images/TPM_PC_1_PC_2.png", "images/TPM_PC_3_PC_4.png"]
+        PCA = [
+            "images/TPM_PC_1_PC_2.png", "images/TPM_PC_3_PC_4.png",
+            "images/TPM.genes_PC_1_PC_2.png", "images/TPM.genes_PC_3_PC_4.png"
+        ]
     message:
         "Finishing the Slamon pipeline"
 
@@ -61,7 +64,7 @@ rule copy_fastq:
         sample = r"[^/]+"
     threads: 1
     params:
-        extra = "",
+        extra = config.get("copy_extra", ""),
         cold_storage = config["cold_storage"]
     wrapper:
         "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/cp/8.25"
@@ -82,7 +85,7 @@ rule copy_sources:
         source = r"[^/]+"
     threads: 1
     params:
-        extra = "",
+        extra = config.get("copy_extra", ""),
         cold_storage = config["cold_storage"]
     wrapper:
         "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/cp/8.25"
@@ -116,7 +119,8 @@ def fq_pairs(wildcards):
 rule salmon_quant:
     input:
         unpack(fq_pairs),
-        index = ancient("quant/salmon/transcriptome_index")
+        index = ancient("quant/salmon/transcriptome_index"),
+        gtf = ancient(config["gtf"])
     output:
         quant = "quant/salmon/{sample}/quant.sf",
         quant_genes = "quant/salmon/{sample}/quant.genes.sf",
@@ -135,7 +139,8 @@ rule salmon_quant:
         50
     params:
         libtype = config["libtype"],
-        extra = config.get("salmon_quant_extra", "")
+        extra = f"{config.get('salmon_quant_extra', '')}"
+                f" --geneMap {config['gtf']}"
     resources:
         mem_mb = (
             lambda wildcards, attempt: min(attempt * 8192, 20480)
@@ -189,7 +194,7 @@ rule multiqc:
         "master/bio/multiqc"
 
 
-rule merge_quants:
+rule merge_quants_transcripts:
     input:
         **{
             sample: f"quant/salmon/{sample}/quant.sf"
@@ -211,12 +216,34 @@ rule merge_quants:
         "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/pandamerge/1.0"
 
 
+rule merge_quants_genes:
+    input:
+        **{
+            sample: f"quant/salmon/{sample}/quant.genes.sf"
+            for sample in config["pair"]
+        }
+    output:
+        TPM = "quant/TPM.genes.tsv",
+        NumReads = "quant/NumReads.genes.tsv"
+    message:
+        "Merging all Salmon quantifications into single tables"
+    threads: 1
+    resources:
+        mem_mb = (
+            lambda wildcards, attempt: min(attempt * 768, 12288)
+        )
+    log:
+        "logs/merge_quants.log"
+    wrapper:
+        "https://raw.githubusercontent.com/tdayris/yawn/master/SnakemakeWrappers/pandamerge/1.0"
+
+
 rule PCA:
     input:
-        "quant/TPM.tsv"
+        "quant/{count}.tsv"
     output:
-        "images/TPM_PC_1_PC_2.png",
-        "images/TPM_PC_3_PC_4.png"
+        "images/{count}_PC_1_PC_2.png",
+        "images/{count}_PC_3_PC_4.png"
     message:
         "Building PCA from {input}"
     threads: 1
@@ -224,8 +251,10 @@ rule PCA:
         mem_mb = (
             lambda wildcards, attempt: min(attempt * 768, 8192)
         )
+    wildcard_constraints:
+        count = r"TPM(.genes)?"
     log:
-        "logs/PCA.logs"
+        "logs/PCA_{count}.logs"
     params:
         conditions = config["conditions"]
     wrapper:

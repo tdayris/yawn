@@ -28,7 +28,6 @@ __version__ = "0.1.0"
 # General importations
 import argparse
 import dataclasses
-# import itertools
 import os
 import typing
 import sys
@@ -80,6 +79,15 @@ class RNASeq(LauncherSnakemake):
         metadata={
             "help": "Space separated list of conditions,"
                     " corresponding to the fastq files"
+        }
+    )
+    batch: typing.List[str] = dataclasses.field(
+        default="",
+        init=True,
+        repr=False,
+        metadata={
+            "help": "Space separated list of conditions"
+                    " corresponding to the samples batch effect"
         }
     )
     fasta_transcriptome: str = dataclasses.field(
@@ -167,6 +175,31 @@ class RNASeq(LauncherSnakemake):
         metadata={
             "help": "Path to a yaml file containing the list of cold storages",
             "metavar": "PATH"
+        }
+    )
+    copy_extra: str = dataclasses.field(
+        default="--verbose",
+        init=True,
+        repr=True,
+        metadata={
+            "help": "Copy (cp) additional parameters"
+        }
+    )
+    salmon_quant_extra: str = dataclasses.field(
+        default="--numBootstraps 100 --useVBOpt --validateMappings "
+                f"--gcBias --seqBias",
+        init=True,
+        repr=True,
+        metadata={
+            "help": "Salmon quant optional parameters"
+        }
+    )
+    salmon_index_extra: str = dataclasses.field(
+        default="--gencode --keepDuplicates --perfectHash",
+        init=True,
+        repr=True,
+        metadata={
+            "help": "Salmon index optional parameters"
         }
     )
 
@@ -258,5 +291,6 @@ class RNASeq(LauncherSnakemake):
 if __name__ == "__main__":
     args = RNASeq.argparser().parse_args()
     rna = RNASeq(**vars(args))
+    print(rna)
     rna.write()
     rna.run()
