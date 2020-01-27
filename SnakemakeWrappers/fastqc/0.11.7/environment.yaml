@@ -1,5 +1,0 @@
-name: "FastQC_0_11_7"
-channels:
-    - bioconda
-dependencies:
-    - fastqc=0.11.7
