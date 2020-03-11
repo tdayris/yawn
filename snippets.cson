@@ -1,0 +1,638 @@
+# Your snippets
+#
+# Atom snippets allow you to enter a simple prefix in the editor and hit tab to
+# expand the prefix into a larger code block with templated values.
+#
+# You can create a new snippet in this file by typing "snip" and then hitting
+# tab.
+#
+# An example CoffeeScript snippet to expand log to console.log:
+#
+# '.source.coffee':
+#   'Console log':
+#     'prefix': 'log'
+#     'body': 'console.log $1'
+#
+# Each scope (e.g. '.source.coffee' above) can only be declared once.
+#
+# This file uses CoffeeScript Object Notation (CSON).
+# If you are unfamiliar with CSON, you can read more about it in the
+# Atom Flight Manual:
+# http://flight-manual.atom.io/using-atom/sections/basic-customization/#_cson
+
+'.source.yaml':
+  "Conda backbone":
+    "prefix": "conda"
+    "body": """
+    ---
+    name: ${1:my_env}
+    channels:
+      - bioconda
+      - conda-forge
+      - defaults
+      - r
+    dependencies:
+      ${2}
+    """
+'.source.python':
+  'Snakemake Shell Rule':
+    'prefix': 'ruleshell'
+    'body': """
+    rule ${1}:
+        input:
+            ${2}
+        output:
+            ${3}
+        message:
+            "${4}"
+        threads:
+            ${5}
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(attempt * 1024, 10240)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(attempt * 20, 200)
+            )
+        conda:
+            "${8}"
+        log:
+            "logs/${1}.log"
+        shell:
+            "${9}"
+    """
+  'Snakemake Script Rule':
+    'prefix': 'rulesript'
+    'body': """
+    rule ${1}:
+        input:
+            ${2}
+        output:
+            ${3}
+        message:
+            "${4}"
+        threads:
+            ${5}
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(attempt * 1024, 10240)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(attempt * 20, 200)
+            )
+        conda:
+            "${8}"
+        log:
+            "logs/${1}.log"
+        script:
+            "${9}"
+    """
+  'Snakemake Wrapper Rule':
+    'prefix': 'rulewrapp'
+    'body': """
+    rule ${1}:
+        input:
+            ${2}
+        output:
+            ${3}
+        message:
+            "${4}"
+        threads:
+            ${5}
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(attempt * 1024, 10240)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(attempt * 20, 200)
+            )
+        log:
+            "logs/${1}.log"
+        wrapper:
+            f"{wrapper_version}/bio/${8}"
+    """
+  'Initiate Snakemake script':
+    "prefix": "snakestart"
+    'body': """
+    import sys
+    import pandas
+    import os.path
+
+    from snakemake.utils import min_version, makedirs
+    from pathlib import Path
+    from typing import Any, Dict
+
+    if sys.version_info < (3, 7):
+        raise SystemError("Please use Python 3.7 or later")
+
+    min_version('5.10.0')
+    wrapper_version = '0.49.0'
+    git = "https://raw.githubusercontent.com/tdayris-perso/snakemake-wrappers"
+    singularity: "docker://continuumio/miniconda3:5.0.1"
+
+    design_path = Path("${1:design.tsv}")
+    if not design_path.exists():
+        raise FileNotFoundError(f"Could not find {str(design_path)}")
+
+    design = pandas.read_csv(
+        design_path,
+        sep="\\\\t",
+        header=0,
+        index_col=None,
+        dtype=str
+    )
+
+    design["Upstream_copy"] = [
+        os.path.join("raw_data", os.path.basename(p))
+        for p in design.${2:Upstream_file}
+    ]
+
+    design["Downstream_copy"] = [
+        os.path.join("raw_data", os.path.basename(p))
+        for p in design.${2:Downstream_file}
+    ]
+
+    design_dict = design.to_dict()
+
+    rule all:
+        input:
+            # TODO: Fill all
+        message:
+            "Finishing pipeline ${3}"
+    """
+  'Download DNA':
+    "prefix": "ensembldna"
+    'body': """
+    # TODO: Add download_fasta in localrules
+    # TODO: Add to all: ensembldna = "resources/${1:homo_sapiens}_dna.fasta"
+
+    rule download_fasta:
+        output:
+            temp("resources/${1:homo_sapiens}_dna.fasta")
+        message:
+            "Downloading Fasta from ensembl"
+        params:
+            species = "${1:homo_sapiens}",
+            release = "${2:98}",
+            datatype = "${3:dna}",
+            build = "${4:GRCh38}"
+        threads:
+            1
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(128 * attempt, 512)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(60 * attempt, 120)
+            )
+        log:
+            "logs/ensembl_annotation/${1:homo_sapiens}_dna.log"
+        wrapper:
+            f"{wrapper_version}/bio/reference/ensembl-sequence"
+    """
+  'Download GTF':
+    "prefix": "ensemblgtf"
+    "body": """
+    # TODO: Add download_gtf in localrules
+    # TODO: Add to all: ensemblgtf = "resources/${1:homo_sapiens}.gtf"
+
+    rule download_gtf:
+        output:
+            temp("resources/${1:homo_sapiens}.gtf")
+        message:
+            "Downloading GTF from ensembl"
+        params:
+            species = "${1:homo_sapiens}",
+            release = "${2:98}",
+            fmt = "${3:gtf}",
+            build = "${4:GRCh38}"
+        threads:
+            1
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(128 * attempt, 512)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(60 * attempt, 120)
+            )
+        log:
+            "logs/ensembl_annotation/${1:homo_sapiens}_gtf.log"
+        wrapper:
+            f"{wrapper_version}/bio/reference/ensembl-annotation"
+    """
+  'Download CDNA':
+    'prefix': 'ensemblcdna'
+    'body': """
+    # TODO: Add download_fasta_cdna in localrules
+    # TODO: Add to all: ensembl_cdna = "resources/${1:homo_sapiens}_cdna.fasta"
+
+    rule download_fasta_cdna:
+        output:
+            temp("resources/${1:homo_sapiens}_cdna_patch.fasta")
+        message:
+            "Downloading Fasta from ensembl"
+        params:
+            species = "${1:homo_sapiens}",
+            release = "${2:98}",
+            datatype = "${3:cdna}",
+            build = "${4:GRCh38}"
+        threads:
+            1
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(128 * attempt, 512)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(60 * attempt, 120)
+            )
+        log:
+            "logs/ensembl_annotation/${1:homo_sapiens}_cdna_patch.log"
+        wrapper:
+            f"{wrapper_version}/bio/reference/ensembl-sequence"
+
+
+    rule correct_cdna_patch:
+        input:
+            "resources/${1:homo_sapiens}_cdna_patch.fasta"
+        output:
+            temp("resources/${1:homo_sapiens}_cdna.fasta")
+        message:
+            "Removing patch ids from ensembl transcripts names"
+        threads:
+            1
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(256 + attempt * 128, 512)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(attempt * 20, 200)
+            )
+        log:
+            "logs/ensembl_annotation/${1:homo_sapiens}_cdna.log"
+        shell:
+            "sed 's/\.[0-9]* / /g' {input} > {output} 2> {log}"
+    """
+  'Salmon Quantification':
+    'prefix': 'salmon'
+    'body': """
+    # TODO: Add to all:
+    # expand("salmon/quant/{sample}/quant.sf", sample=design.${4:Sample_id})
+
+    rule salmon_index:
+        input:
+            "resources/${1:homo_sapiens}_cdna.fasta"
+        output:
+            directory("salmon/index/${1:homo_sapiens}")
+        message:
+            "Indexing ${1:homo_sapiens} CDNA with Salmon"
+        threads:
+            10
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(8192 + 1024 * attempt, 15360)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(25 * attempt, 120)
+            )
+        params:
+            extra = "--keepDuplicates --perfectHash"
+        log:
+            "logs/salmon/index_${1:homo_sapiens}.log"
+        wrapper:
+            f"{wrapper_version}/bio/salmon/index"
+
+
+    def salmon_sample_pair_w(wildcards: Any) -> Dict[str, str]:
+        return {
+            "r1": design_dict[${2:Upstream_copy}][wildcards.sample]
+            "r2": design_dict[${3:Downstream_copy}][wildcards.sample]
+        }
+
+
+    rule salmon_quant:
+        input:
+            unpack(salmon_sample_pair_w),
+            index = "salmon/index/${1:homo_sapiens}"
+        output:
+            quant = "salmon/quant/{sample}/quant.sf"
+        message:
+            "Quantifying {wildcards.sample} with Salmon"
+        threads:
+            10
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(8192 + 1024 * attempt, 15360)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(45 * attempt, 120)
+            )
+        params:
+            libtype = "A",
+            extra = "--numBootstraps 100 --validateMappings --gcBias --seqBias"
+        log:
+            "logs/salmon/quant/${1:homo_sapiens}_{sample}.log"
+        wrapper:
+            f"{wrapper_version}/bio/salmon/quant"
+    """
+  'Copy fastq':
+    'prefix': 'copyfq'
+    'body': """
+    # TODO: Add copy_fastq in localrules
+    # TODO: Add to all:
+    # copy_fq = expand("raw_data/{file}", file=copy_dict.keys())
+
+    copy_dict = {
+        os.path.basename(f): f
+        for f in chain(design.${1:Upstream_file}, design.${2:Downstream_file})
+    }
+
+    rule copy_fastq:
+        input:
+            lambda wildcards: str(copy_dict[wildcards.file])
+        output:
+            temp("raw_data/{file}")
+        message:
+            "Copying {wildcards.file} for further process"
+        threads:
+            1
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(attempt * 128, 512)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(attempt * 30, 240)
+            )
+        wildcard_constraints:
+            file = r'[^/]+'
+        params:
+            extra = "--verbose",
+            cold_storage = "${3:NONE}"
+        log:
+            "logs/copy/{file}.log"
+        wrapper:
+            f"{git}/cp/bio/cp"
+    """
+  'Fastqc':
+    'prefix': 'fastqc'
+    'body': """
+    # TODO: Add to all:
+    # fqc_html = expand("fastqc/{sample}_fastqc.html", sample=fqc_dict.keys())
+    # fqc_zip = expand("fastqc/{sample}_fastqc.zip", sample=fqc_dict.keys())
+
+    fqc_dict = {
+        Path(p).stem: p
+        for p in chain(design.${1:Upstream_copy}, design.${2:Downstream_copy})
+    }
+
+    rule fastqc:
+        input:
+            lambda wildcards: str(fqc_dict[wildcards.sample])
+        output:
+            html = "fastqc/{sample}_fastqc.html",
+            zip = "fastqc/{sample}_fastqc.zip"
+        message:
+            "Controling quality of {wildcards.sample}"
+        threads:
+            1
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(attempt * 1024, 8096)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(attempt * 45, 120)
+            )
+        params:
+            ""
+        log:
+            "logs/fastqc/{sample}.log"
+        wrapper:
+            f"{wrapper_version}/bio/fastqc"
+    """
+  'Star Mapping':
+    'prefix': 'star'
+    'body': """
+    # TODO: Add to all:
+    # star_bam = expand("star/bam/{sample}.bam", sample=design.${4:Sample_id})
+    # star_bai = expand("star/bam/{sample}.bam.bai", sample=design.${4:Sample_id})
+    # flagstat = expand("samtools/flagstat/{sample}.flagstat", sample=design.${4:Sample_id})
+
+    rule star_index:
+        input:
+            fasta = "resources/${1:homo_sapiens}_dna.fasta",
+            gtf = "resources/${1:homo_sapiens}.gtf"
+        output:
+            directory("star/index/${1:homo_sapiens}")
+        message:
+            "Indexing ${1:homo_sapiens} with STAR"
+        threads:
+            10
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(35840 + 10240 * attempt, 51200)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(35 * attempt, 120)
+            )
+        params:
+            gtf = "resources/${1:homo_sapiens}.gtf",
+            sjdbOverhang = "100",
+            extra = ""
+        log:
+            "logs/star/index.log"
+        wrapper:
+            f"{wrapper_version}/bio/star/index"
+
+
+    def salmon_sample_pair_w(wildcards: Any) -> Dict[str, str]:
+        return {
+            "fq1": design_dict[${2:Upstream_copy}][wildcards.sample]
+            "fq2": design_dict[${3:Downstream_copy}][wildcards.sample]
+        }
+
+
+    rule star_mapping:
+        input:
+            unpack(star_sample_pair_w),
+            index = "star/index/${1:homo_sapiens}"
+        output:
+            temp("star/bam/{sample}/Aligned.sortedByCoord.out.bam")
+        message:
+            "Mapping {wildcards.sample} with STAR"
+        threads:
+            10
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(35840 + 10240 * attempt, 51200)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(50 * attempt, 120)
+            )
+        params:
+            index = "star/index/${1:homo_sapiens}",
+            extra = ("--outSAMtype BAM SortedByCoordinate "
+                     "--outSAMattributes All "
+                     "--outFilterType BySJout "
+                     "--outFilterMismatchNmax 999 "
+                     "--alignSJDBoverhangMin 1 "
+                     "--outFilterMismatchNoverReadLmax 0.04 "
+                     "--alignMatesGapMax 1000000 "
+                     "--alignIntronMax 1000000 "
+                     "--alignIntronMin 20 "
+                     "--alignSJoverhangMin 8 "
+                     "--outFilterMultimapNmax 20 "
+                     "--twopassMode Basic")
+        log:
+            "logs/star/bam/{sample}.log"
+        wrapper:
+            f"{wrapper_version}/bio/star/align"
+
+
+    rule star_rename:
+        input:
+            "star/bam/{sample}/Aligned.sortedByCoord.out.bam"
+        output:
+            "star/bam/{sample}.bam"
+        message:
+            "Renaming {wildcards.sample} for further analyses"
+        threads:
+            1
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(128 * attempt, 512)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(5 * attempt, 15)
+            )
+        params:
+            ""
+        log:
+            "logs/rename/{sample}.log"
+        shell:
+            "cp -v {input} {output} > {log} 2>&1"
+
+    rule samtools_index:
+        input:
+            "star/bam/{sample}.bam"
+        output:
+            "star/bam/{sample}.bam.bai"
+        message:
+            "Indexing {wildcards.sample} bam file"
+        threads:
+            1
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(512 * attempt, 1024)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(15 * attempt, 45)
+            )
+        params:
+            ""
+        wrapper:
+            "{wrapper_version}/bio/samtools/index"
+
+    rule samtools_flagstat:
+        input:
+            "star/bam/{sample}.bam"
+        output:
+            temp("samtools/flagstat/{sample}.flagstat")
+        message:
+            "Gathering statistics on {wildcards.sample}'s mapping"
+        threads:
+            1
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(512 * attempt, 1024)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(15 * attempt, 45)
+            )
+        params:
+            ""
+        wrapper:
+            "{wrapper_version}/bio/samtools/flagstat"
+    """
+  'FastQScreen':
+    'prefix': 'screen'
+    'body': """
+    # TODO: Add to all:
+    # fqscreen_txt = expand("fqscreen/{sample}.fastq_screen.txt", sample=fqscreen_dict.keys())
+    # fqscreen_png = expand("fqscreen/{sample}.fastq_screen.png", sample=fqscreen_dict.keys())
+
+    fqscreen_dict = {
+        os.path.basename(path): path
+        for path in chain(design.${1:Upstream_copy}, design.${2:Downstream_copy})
+    }
+
+
+    rule fastq_screen:
+        input:
+            lambda w: fqscreen_dict[w.sample]
+        output:
+            txt = temp("fqscreen/{sample}.fastq_screen.txt"),
+            png = temp("fqscreen/{sample}.fastq_screen.png")
+        message:
+            "Screening {wildcards.sample}"
+        params:
+            subset = 100000,
+            fastq_screen_config = {
+                "database": {
+                    "Human": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Human/Homo_sapiens.GRCh38"},
+                    "Mouse": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Mouse/Mus_musculus.GRCm38"},
+                    "Rat": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Rat/Rnor_6.0"},
+                    "Drosophila": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Drosophila/BDGP6"},
+                    "Worm": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Worm/Caenorhabditis_elegans.WBcel235"},
+                    "Yeast": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Yeast/Saccharomyces_cerevisiae.R64-1-1"},
+                    "Arabidopsis": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Arabidopsis/Arabidopsis_thaliana.TAIR10"},
+                    "Ecoli": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/E_coli/Ecoli"},
+                    "rRNA": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/rRNA/GRCm38_rRNA"},
+                    "MT": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Mitochondria/mitochondria"},
+                    "PhiX": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/PhiX/phi_plus_SNPs"},
+                    "Lambda": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Lambda/Lambda"},
+                    "Vectors": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Vectors/Vectors"},
+                    "Adapters": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Adapters/Contaminants"},
+                    "SalmoSalar": {"bowtie2": "/mnt/beegfs/database/bioinfo/Index_DB/FastQ_Screen/0.13.0/Salmo_salar/SalmoSalar.ICSASGv2"},
+                },
+                "aligner_paths": {'bowtie': 'bowtie', 'bowtie2': 'bowtie2'}
+            },
+            aligner = 'bowtie2'
+        wildcard_constraints:
+            sample = "|".join(fqscreen_dict.keys())
+        threads:
+            8
+        resources:
+            mem_mb = (
+                    lambda wildcards, attempt: min(10240 * attempt, 15360)
+                ),
+            time_min = (
+                lambda wildcards, attempt: min(115 * attempt, 480)
+            )
+        log:
+            "logs/fastq_screen/{sample}.log"
+        wrapper:
+            f"{wrapper_version}/bio/fastq_screen"
+    """
+  'TX_to_gene':
+    'prefix': 'tx2gene'
+    'body': """
+    rule tx2gene:
+        input:
+            gtf = config["ref"]["gtf"]
+        output:
+            tsv = temp("deseq2/tx2gene.tsv")
+        message:
+            "Building transcript to gene table for Tximport"
+        threads:
+            1
+        resources:
+            mem_mb = (
+                lambda wildcards, attempt: min(attempt * 512, 1024)
+            ),
+            time_min = (
+                lambda wildcards, attempt: min(attempt * 10, 20)
+            )
+        log:
+            "logs/tx2gene.log"
+        wrapper:
+            f"{git}/tx_to_tgene/bio/tx_to_gene/gtf"
+    """
